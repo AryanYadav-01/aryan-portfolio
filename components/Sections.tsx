@@ -31,7 +31,10 @@ export function About() {
   const infoRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // HYDRATION FIX: set initial states via gsap.set (client-only), not inline styles
     const clips = headRef.current?.querySelectorAll(".clip-inner");
+    clips?.forEach((el) => gsap.set(el, { y: "100%" }));
+
     clips?.forEach((el, i) => {
       gsap.to(el, { y: "0%", duration: 0.9, ease: "power4.out", scrollTrigger: { trigger: el, start: "top 90%" }, delay: i * 0.1 });
     });
@@ -58,7 +61,8 @@ export function About() {
         <h2 ref={headRef} style={{ fontFamily: "Anton, sans-serif", fontSize: "clamp(3rem,6vw,6rem)", lineHeight: 0.95, letterSpacing: "-1px", marginBottom: 40 }}>
           {["FULL","STACK","ENGINEER"].map((w, i) => (
             <span key={i} style={{ display: "block", overflow: "hidden" }}>
-              <span className="clip-inner" style={{ display: "block", transform: "translateY(100%)" }}>{w}</span>
+              {/* NO inline transform — gsap.set handles it in useEffect */}
+              <span className="clip-inner" style={{ display: "block" }}>{w}</span>
             </span>
           ))}
         </h2>
@@ -286,7 +290,6 @@ export function GitHubStats() {
   const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Build contribution grid
     const grid = gridRef.current;
     if (!grid) return;
     const weights = [0.3, 0.7, 0.8, 0.85, 0.75, 0.4, 0.2];
@@ -304,7 +307,6 @@ export function GitHubStats() {
       trigger: "#github-stats", start: "top 80%", once: true,
       onEnter() {
         gsap.to(grid.children, { opacity: 1, scale: 1, duration: 0.4, stagger: { each: 0.004, from: "start" }, ease: "back.out(1.2)" });
-        // Fetch real stats
         fetch(`https://api.github.com/users/${PROFILE.githubUsername}`)
           .then(r => r.json())
           .then(d => setStats({ repos: d.public_repos ?? "5+", followers: d.followers ?? "—", following: d.following ?? "—" }))
@@ -380,8 +382,6 @@ export function Blog() {
           </div>
         ))}
       </div>
-
-      {/* Modal */}
       {openIdx !== null && (
         <div onClick={() => setOpenIdx(null)} style={{ position: "fixed", inset: 0, background: "rgba(6,6,8,.97)", zIndex: 5000, display: "flex", alignItems: "flex-start", justifyContent: "center", overflowY: "auto", padding: "80px 40px" }}>
           <button onClick={() => setOpenIdx(null)} style={{ position: "fixed", top: 32, right: 40, fontFamily: "JetBrains Mono, monospace", fontSize: "0.72rem", letterSpacing: "2px", color: "var(--muted)", cursor: "none", border: "1px solid rgba(255,255,255,.1)", padding: "10px 18px", background: "transparent", zIndex: 5001, transition: "all 0.3s" }}
@@ -408,7 +408,10 @@ export function Contact() {
   const rowRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // HYDRATION FIX: set initial hidden states via gsap.set, not inline styles
     const inners = titleRef.current?.querySelectorAll(".ch-inner");
+    inners?.forEach((el) => gsap.set(el, { y: "100%" }));
+
     inners?.forEach((el, i) => {
       gsap.to(el, { y: "0%", duration: 1, ease: "power4.out", scrollTrigger: { trigger: el, start: "top 90%" }, delay: i * 0.12 });
     });
@@ -423,7 +426,8 @@ export function Contact() {
       <h2 ref={titleRef} style={{ fontFamily: "Anton, sans-serif", fontSize: "clamp(4rem,12vw,14rem)", lineHeight: 0.88, letterSpacing: "-3px", position: "relative", zIndex: 2, marginBottom: 60 }}>
         {[{ text: "LET'S", style: {} }, { text: "WORK", style: { WebkitTextStroke: "1.5px rgba(200,241,53,.4)", color: "transparent" } }, { text: "TOGETHER", style: { color: "var(--yellow)" } }].map((line, i) => (
           <span key={i} style={{ display: "block", overflow: "hidden" }}>
-            <span className="ch-inner" style={{ display: "block", transform: "translateY(100%)", ...line.style }}>{line.text}</span>
+            {/* NO inline transform — gsap.set handles it in useEffect */}
+            <span className="ch-inner" style={{ display: "block", ...line.style }}>{line.text}</span>
           </span>
         ))}
       </h2>
@@ -468,7 +472,6 @@ export function Chatbot() {
     setHistory(newHistory);
     setInput("");
     setLoading(true);
-
     try {
       const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: newHistory }) });
       const data = await res.json();
@@ -485,15 +488,11 @@ export function Chatbot() {
 
   return (
     <>
-      {/* FAB */}
       <button onClick={() => setOpen(!open)} style={{ position: "fixed", bottom: 36, right: 36, width: 60, height: 60, background: "var(--yellow)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "none", zIndex: 4000, border: "none", fontSize: "1.4rem", transition: "transform 0.3s", animation: "chatPulse 2.5s ease-in-out infinite" }}
         onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.1)"; }}
         onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
       >{open ? "✕" : "💬"}</button>
-
-      {/* Panel */}
       <div style={{ position: "fixed", bottom: 110, right: 36, width: 380, height: 560, background: "#0a0a10", border: "1px solid rgba(200,241,53,.2)", zIndex: 4000, display: "flex", flexDirection: "column", transform: open ? "translateY(0) scale(1)" : "translateY(20px) scale(.95)", opacity: open ? 1 : 0, pointerEvents: open ? "all" : "none", transition: "all .35s cubic-bezier(.34,1.56,.64,1)", transformOrigin: "bottom right", boxShadow: "0 30px 80px rgba(0,0,0,.6)" }}>
-        {/* Header */}
         <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(255,255,255,.07)", display: "flex", alignItems: "center", gap: 14, background: "rgba(200,241,53,.04)" }}>
           <div style={{ width: 36, height: 36, background: "var(--yellow)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem" }}>🤖</div>
           <div>
@@ -501,8 +500,6 @@ export function Chatbot() {
             <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.62rem", letterSpacing: "2px", color: "var(--yellow)" }}>● Online — Ask me anything</div>
           </div>
         </div>
-
-        {/* Messages */}
         <div ref={msgsRef} style={{ flex: 1, overflowY: "auto", padding: 20, display: "flex", flexDirection: "column", gap: 14, scrollBehavior: "smooth" }}>
           {messages.map((m, i) => (
             <div key={i} style={{ maxWidth: "85%", display: "flex", flexDirection: "column", gap: 4, alignSelf: m.role === "user" ? "flex-end" : "flex-start", alignItems: m.role === "user" ? "flex-end" : "flex-start" }}>
@@ -520,8 +517,6 @@ export function Chatbot() {
             </div>
           )}
         </div>
-
-        {/* Suggestions */}
         {showSuggestions && (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "0 20px 12px" }}>
             {suggestions.map((s, i) => (
@@ -532,17 +527,8 @@ export function Chatbot() {
             ))}
           </div>
         )}
-
-        {/* Input */}
         <div style={{ padding: 16, borderTop: "1px solid rgba(255,255,255,.07)", display: "flex", gap: 10, background: "rgba(0,0,0,.3)" }}>
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
-            placeholder="Ask about Aryan..."
-            rows={1}
-            style={{ flex: 1, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.1)", padding: "12px 14px", fontFamily: "General Sans, sans-serif", fontSize: "0.87rem", color: "var(--white)", outline: "none", resize: "none", cursor: "text" }}
-          />
+          <textarea value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }} placeholder="Ask about Aryan..." rows={1} style={{ flex: 1, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.1)", padding: "12px 14px", fontFamily: "General Sans, sans-serif", fontSize: "0.87rem", color: "var(--white)", outline: "none", resize: "none", cursor: "text" }} />
           <button onClick={() => send(input)} disabled={loading || !input.trim()} style={{ width: 44, height: 44, background: "var(--yellow)", border: "none", cursor: "none", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", transition: "all 0.3s", flexShrink: 0, alignSelf: "flex-end", opacity: loading || !input.trim() ? 0.4 : 1 }}>➤</button>
         </div>
       </div>
