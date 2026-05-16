@@ -288,32 +288,64 @@ export function Certifications() {
 export function GitHubStats() {
   const [stats, setStats] = useState({ repos: "—", followers: "—", following: "—" });
   const gridRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
     const grid = gridRef.current;
     if (!grid) return;
+
+    // Clear any existing children
+    grid.innerHTML = "";
+
     const weights = [0.3, 0.7, 0.8, 0.85, 0.75, 0.4, 0.2];
     for (let i = 0; i < 180; i++) {
       const d = document.createElement("div");
       const dow = new Date(Date.now() - (180 - i) * 86400000).getDay();
       const r = Math.random(), w = weights[dow];
       const lvl = r < w * 0.25 ? "l4" : r < w * 0.45 ? "l3" : r < w * 0.6 ? "l2" : r < w * 0.72 ? "l1" : "";
-      d.style.cssText = `width:12px;height:12px;border-radius:2px;flex-shrink:0;background:${lvl === "l4" ? "var(--yellow)" : lvl === "l3" ? "rgba(200,241,53,.7)" : lvl === "l2" ? "rgba(200,241,53,.45)" : lvl === "l1" ? "rgba(200,241,53,.2)" : "rgba(255,255,255,.05)"}`;
-      d.style.opacity = "0"; d.style.transform = "scale(0)";
+      d.style.cssText = `width:12px;height:12px;border-radius:2px;flex-shrink:0;background:${
+        lvl === "l4" ? "var(--yellow)" :
+        lvl === "l3" ? "rgba(200,241,53,.7)" :
+        lvl === "l2" ? "rgba(200,241,53,.45)" :
+        lvl === "l1" ? "rgba(200,241,53,.2)" :
+        "rgba(255,255,255,.05)"
+      }`;
+      d.style.opacity = "0";
+      d.style.transform = "scale(0)";
       grid.appendChild(d);
     }
 
     ScrollTrigger.create({
       trigger: "#github-stats", start: "top 80%", once: true,
       onEnter() {
-        gsap.to(grid.children, { opacity: 1, scale: 1, duration: 0.4, stagger: { each: 0.004, from: "start" }, ease: "back.out(1.2)" });
+        gsap.to(grid.children, {
+          opacity: 1, scale: 1, duration: 0.4,
+          stagger: { each: 0.004, from: "start" },
+          ease: "back.out(1.2)"
+        });
         fetch(`https://api.github.com/users/${PROFILE.githubUsername}`)
           .then(r => r.json())
-          .then(d => setStats({ repos: d.public_repos ?? "5+", followers: d.followers ?? "—", following: d.following ?? "—" }))
+          .then(d => setStats({
+            repos: d.public_repos ?? "5+",
+            followers: d.followers ?? "—",
+            following: d.following ?? "—"
+          }))
           .catch(() => setStats({ repos: "5+", followers: "—", following: "—" }));
       },
     });
-  }, []);
+  }, [mounted]);
+
+  if (!mounted) return (
+    <div id="github-stats" style={{ padding: "80px 60px 0", background: "var(--black)" }}>
+      <div style={{ borderTop: "1px solid rgba(255,255,255,.06)", padding: "36px 0" }} />
+    </div>
+  );
 
   const statRows = [
     { icon: "⭐", val: stats.repos, label: "Public Repos" },
@@ -334,7 +366,9 @@ export function GitHubStats() {
         ))}
       </div>
       <div style={{ marginTop: 32, paddingBottom: 60 }}>
-        <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.68rem", letterSpacing: "3px", color: "var(--muted)", textTransform: "uppercase", marginBottom: 16 }}>// Contribution Activity — Last 6 Months</div>
+        <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.68rem", letterSpacing: "3px", color: "var(--muted)", textTransform: "uppercase", marginBottom: 16 }}>
+          // Contribution Activity — Last 6 Months
+        </div>
         <div ref={gridRef} style={{ display: "flex", gap: 3, flexWrap: "wrap", maxWidth: "100%" }} />
       </div>
     </div>
