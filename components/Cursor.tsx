@@ -7,6 +7,9 @@ export default function Cursor() {
   const ringRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Hide default cursor via JS only (not CSS) — prevents SSR mismatch
+    document.documentElement.style.cursor = "none";
+
     let mx = 0, my = 0, rx = 0, ry = 0;
     const onMove = (e: MouseEvent) => { mx = e.clientX; my = e.clientY; };
     document.addEventListener("mousemove", onMove);
@@ -33,13 +36,20 @@ export default function Cursor() {
       });
     });
 
-    return () => { document.removeEventListener("mousemove", onMove); cancelAnimationFrame(raf); };
+    return () => {
+      document.documentElement.style.cursor = "";
+      document.removeEventListener("mousemove", onMove);
+      cancelAnimationFrame(raf);
+    };
   }, []);
 
+  // Cursor is already loaded with ssr:false via dynamic() in page.tsx
+  // so this never runs on the server — no hydration risk here.
+  // We render with opacity:0 so they're invisible until mouse moves in.
   return (
     <>
-      <div ref={dotRef} className="cursor-dot" />
-      <div ref={ringRef} className="cursor-ring" />
+      <div ref={dotRef} className="cursor-dot" style={{ opacity: 0 }} />
+      <div ref={ringRef} className="cursor-ring" style={{ opacity: 0 }} />
     </>
   );
 }
